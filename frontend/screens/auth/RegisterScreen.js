@@ -1,14 +1,7 @@
 // screens/auth/RegisterScreen.js
 // Member 1 — FR3: Register validates Full Name, Username, AIUB email, Department,
 // ID, Role, Password, Confirm Password.
-//
-// NOTE: adapted from the guide's version. The real AuthContext has no register() and no
-// `users` array to append to, so this screen checks duplicates against the static
-// data/users.js list, "creates" the account in memory, and logs the person straight in
-// via setUser(). Because there's nowhere shared to persist the new account, it won't be
-// findable again after the app reloads — worth flagging to whoever owns AuthContext.js if
-// FR3 needs to survive navigation away and back.
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import InputField from "../../components/InputField";
@@ -16,7 +9,6 @@ import PrimaryButton from "../../components/PrimaryButton";
 import useForm from "../../hooks/useForm";
 import useAuth from "../../hooks/useAuth";
 import { validateRegister } from "../../utils/validation";
-import usersData from "../../data/users";
 import colors from "../../constants/colors";
 import fonts from "../../constants/fonts";
 import routes from "../../constants/routes";
@@ -24,7 +16,8 @@ import routes from "../../constants/routes";
 const ROLES = ["Student", "Faculty", "Alumni"]; // Admin accounts are created manually, not self-registered
 
 export default function RegisterScreen({ navigation }) {
-  const { setUser, loading, setLoading } = useAuth();
+  const { register } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
   const { values, errors, handleChange, validateAll } = useForm(
     {
       fullName: "", username: "", email: "", department: "",
@@ -33,32 +26,19 @@ export default function RegisterScreen({ navigation }) {
     validateRegister
   );
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!validateAll()) return;
-
-    const exists = usersData.some(
-      (u) => u.email.toLowerCase() === values.email.trim().toLowerCase()
-    );
-    if (exists) {
-      Alert.alert("Registration failed", "An account with this AIUB email already exists.");
-      return;
-    }
-
-    setLoading(true);
-    setTimeout(() => {
-      const created = {
-        id: "u" + (usersData.length + 1),
-        followers: [],
-        following: [],
-        status: "active",
-        bio: "",
-        ...values,
-      };
-      setLoading(false);
-      Alert.alert("Account created", "You're now logged in.", [
-        { text: "OK", onPress: () => setUser(created) },
+    setSubmitting(true);
+    try {
+      await register(values);
+      Alert.alert("Account created", "You can now log in with your new account.", [
+        { text: "OK", onPress: () => navigation.replace(routes.LOGIN) },
       ]);
-    }, 700);
+    } catch (err) {
+      Alert.alert("Registration failed", err.message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -99,7 +79,7 @@ export default function RegisterScreen({ navigation }) {
           <InputField label="Confirm Password" placeholder="••••••••" value={values.confirmPassword}
             onChangeText={(v) => handleChange("confirmPassword", v)} error={errors.confirmPassword} secureTextEntry />
 
-          <PrimaryButton title="Register" onPress={handleRegister} loading={loading} style={{ marginTop: 8 }} />
+          <PrimaryButton title="Register" onPress={handleRegister} loading={submitting} style={{ marginTop: 8 }} />
         </View>
 
         <View style={styles.footerRow}>

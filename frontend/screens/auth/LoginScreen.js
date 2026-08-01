@@ -1,11 +1,6 @@
 // screens/auth/LoginScreen.js
 // Member 1 — FR2: Login validates AIUB email format and password (min 8 chars).
-//
-// NOTE: adapted from the guide's version. The real AuthContext in this repo only exposes
-// { user, setUser, loading, setLoading } — there's no login() helper — so this screen does
-// the mock-auth lookup itself against data/users.js, then calls setUser() directly.
-// RootNavigator already switches to MainTabs automatically once `user` is set.
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import InputField from "../../components/InputField";
@@ -13,42 +8,29 @@ import PrimaryButton from "../../components/PrimaryButton";
 import useForm from "../../hooks/useForm";
 import useAuth from "../../hooks/useAuth";
 import { validateLogin } from "../../utils/validation";
-import usersData from "../../data/users";
 import colors from "../../constants/colors";
 import fonts from "../../constants/fonts";
 import routes from "../../constants/routes";
 
 export default function LoginScreen({ navigation }) {
-  const { setUser, loading, setLoading } = useAuth();
+  const { login } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
   const { values, errors, handleChange, validateAll } = useForm(
     { email: "", password: "" },
     validateLogin
   );
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!validateAll()) return;
-
-    setLoading(true);
-    // fake network delay so the loading spinner is visible/testable
-    setTimeout(() => {
-      const found = usersData.find(
-        (u) =>
-          u.email.toLowerCase() === values.email.trim().toLowerCase() &&
-          u.password === values.password
-      );
-      setLoading(false);
-
-      if (!found) {
-        Alert.alert("Login failed", "Invalid email or password.");
-        return;
-      }
-      if (found.status === "banned") {
-        Alert.alert("Login failed", "This account has been suspended by an administrator.");
-        return;
-      }
-      setUser(found);
+    setSubmitting(true);
+    try {
+      await login(values.email, values.password);
       // RootNavigator automatically switches to MainTabs once `user` is set.
-    }, 700);
+    } catch (err) {
+      Alert.alert("Login failed", err.message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -79,7 +61,7 @@ export default function LoginScreen({ navigation }) {
             <Text style={styles.link}>Forgot password?</Text>
           </TouchableOpacity>
 
-          <PrimaryButton title="Login" onPress={handleLogin} loading={loading} style={{ marginTop: 16 }} />
+          <PrimaryButton title="Login" onPress={handleLogin} loading={submitting} style={{ marginTop: 16 }} />
 
           <View style={styles.helperNote}>
             <Text style={styles.helperText}>Demo: rafiul.islam@aiub.edu / Rafiul123 (Student)</Text>
