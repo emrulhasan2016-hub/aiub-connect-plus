@@ -3,9 +3,9 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
-import { AuthProvider } from "./shared/context/AuthContext";
-import { AppProvider } from "./shared/context/AppContext";
-import RootNavigator from "./shared/navigation/RootNavigator";
+import { AuthProvider } from "./context/AuthContext";
+import { AppProvider } from "./context/AppContext";
+import RootNavigator from "./navigation/RootNavigator";
 
 export default function App() {
   return (
