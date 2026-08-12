@@ -1,0 +1,28 @@
+{
+  "name": "aiub-connect-plus",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/emrulhasan2016-hub/aiub-connect-plus.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/emrulhasan2016-hub/aiub-connect-plus/issues"
+  },
+  "homepage": "https://github.com/emrulhasan2016-hub/aiub-connect-plus#readme",
+  "dependencies": {
+    "expo": "^57.0.12",
+    "react": "^19.2.8",
+    "react-dom": "19.2.3",
+    "react-native": "^0.87.0",
+    "react-native-web": "^0.21.2"
+  }
+}
