@@ -26,7 +26,7 @@ export default function UserManagementScreen() {
               : u.role === "Moderator"
                 ? "Admin"
                 : "Member";
-          return { ...u, role: nextRole };
+          return { ...u, role: newRole };
         }
         return u;
       }),
