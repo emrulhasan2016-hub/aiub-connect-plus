@@ -2,8 +2,8 @@
 // Member 2 owns this file + Create Post screen (reached from the middle tab).
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
-import routes from "../constants/routes";
-import CreatePostScreen from "../screens/home/CreatePostScreen";
+import routes from "../../constants/routes";
+import CreatePostScreen from "../screens/CreatePostScreen";
 
 const Stack = createStackNavigator();
 

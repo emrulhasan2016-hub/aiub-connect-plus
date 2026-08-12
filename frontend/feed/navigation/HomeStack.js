@@ -1,11 +1,9 @@
-// navigation/HomeStack.js
-// Member 2 owns this file + Home/Post/Comments screens.
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
-import routes from "../constants/routes";
-import HomeFeedScreen from "../screens/home/HomeFeedScreen";
-import PostDetailsScreen from "../screens/home/PostDetailsScreen";
-import CommentsScreen from "../screens/home/CommentsScreen";
+import routes from "../../constants/routes";
+import HomeFeedScreen from "../screens/HomeFeedScreen";
+import PostDetailsScreen from "../screens/PostDetailsScreen";
+import CommentsScreen from "../screens/CommentsScreen";
 
 const Stack = createStackNavigator();
 

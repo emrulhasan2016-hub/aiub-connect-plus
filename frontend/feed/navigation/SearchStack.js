@@ -2,7 +2,7 @@
 // Member 2 owns this file + Search screen.
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
-import routes from "../constants/routes";
+import routes from "../../constants/routes";
 import SearchScreen from "../screens/home/SearchScreen";
 import PostDetailsScreen from "../screens/home/PostDetailsScreen";
 
