@@ -1,71 +1,60 @@
-import React, { useState } from "react";
-import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import useApp from "../hooks/useApp";
-import NoticeCard from "../components/NoticeCard";
-import colors from "../constants/colors";
-import spacing from "../constants/spacing";
-import sizes from "../constants/sizes";
-import fonts from "../constants/fonts";
-import routes from "../constants/routes";
+import React from "react";
+import { View, Text, ScrollView, StyleSheet } from "react-native";
+import useApp from "../../hooks/useApp";
+import useAuth from "../../hooks/useAuth";
+import colors from "../../constants/colors";
+import spacing from "../../constants/spacing";
+import fonts from "../../constants/fonts";
 
-const CATEGORIES = ["All", "Academic", "Exam", "Assignment", "Seminar", "Workshop"];
-export default function NoticeBoardScreen({ navigation }) {
-const { state } = useApp();
-const [selectedCat, setSelectedCat] = useState("All");
- const [search, setSearch] = useState("");
- const filteredNotices = state.notices.filter((n) => {
- const matchesCat = selectedCat === "All" || n.category === selectedCat;
- const matchesSearch = n.title.toLowerCase().includes(search.toLowerCase());
- return matchesCat && matchesSearch;
-});
+export default function NoticeDetailsScreen({ route }) {
+  const { noticeId } = route.params;
+  const { state } = useApp();
+  const { users } = useAuth();
 
-return (
- <View style={styles.container}>
-<View style={styles.searchContainer}>
-<Ionicons name="search" size={18} color={colors.muted} />
-<TextInput
-  style={styles.searchInput}
- placeholder="Search notices..."
- value={search}
-onChangeText={setSearch}
-/>
-</View>
+  const notice = state.notices.find((n) => n.id === noticeId);
+  if (!notice) {
+    return (
+      <View style={styles.center}>
+        <Text>Notice not found.</Text>
+      </View>
+    );
+  }
+  const author = users.find((u) => u.id === notice.userId);
 
-<ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catScroll}>
-{CATEGORIES.map((cat) => (
-<TouchableOpacity
- key={cat}
-style={[styles.catChip, selectedCat === cat && styles.activeCatChip]}
-onPress={() => setSelectedCat(cat)}
->
- <Text style={[styles.catText, selectedCat === cat && styles.activeCatText]}>{cat}</Text>
-          </TouchableOpacity>
-        ))}
- </ScrollView>
-
-<FlatList
- data={filteredNotices}
-  keyExtractor={(item) => item.id}
- renderItem={({ item }) => (
- <NoticeCard
- notice={item}
-  onPress={() => navigation.navigate(routes.NOTICE_DETAILS, { noticeId: item.id })}
-   />
-  )}
-     contentContainerStyle={styles.list}
-  />
- </View>
- );
+  return (
+    <ScrollView style={styles.container}>
+      <Text style={styles.category}>{notice.category}</Text>
+      <Text style={styles.title}>{notice.title}</Text>
+      {author && <Text style={styles.author}>Posted by {author.fullName}</Text>}
+      <Text style={styles.content}>{notice.content}</Text>
+    </ScrollView>
+  );
 }
+
 const styles = StyleSheet.create({
- container: { flex: 1, backgroundColor: colors.background, padding: spacing.md },
-searchContainer: { flexDirection: "row", alignItems: "center", backgroundColor: colors.white, borderRadius: sizes.radiusSm, paddingHorizontal: spacing.md, height: 42, marginBottom: spacing.md },
- searchInput: { flex: 1, marginLeft: spacing.sm },
- catScroll: { maxHeight: 40, marginBottom: spacing.md },
- catChip: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs, backgroundColor: colors.white, borderRadius: sizes.radiusSm, marginRight: spacing.sm, height: 32, justifyContent: "center" },
- activeCatChip: { backgroundColor: colors.navy },
-catText: { color: colors.muted, fontSize: fonts.size.sm, fontWeight: fonts.weight.medium },
-activeCatText: { color: colors.white, fontWeight: fonts.weight.bold },
-list: { paddingBottom: spacing.xl },
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+    padding: spacing.lg,
+  },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  category: {
+    fontSize: fonts.size.xs,
+    fontWeight: fonts.weight.bold,
+    color: colors.goldDark,
+    textTransform: "uppercase",
+  },
+  title: {
+    fontSize: fonts.size.xl,
+    fontWeight: fonts.weight.bold,
+    color: colors.navyDark,
+    marginTop: spacing.xs,
+  },
+  author: {
+    fontSize: fonts.size.sm,
+    color: colors.muted,
+    marginTop: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  content: { fontSize: fonts.size.base, color: colors.text, lineHeight: 22 },
 });

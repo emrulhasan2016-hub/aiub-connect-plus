@@ -4,6 +4,7 @@ import AdminDashboardScreen from "../screens/AdminDashboardScreen";
 import UserManagementScreen from "../screens/UserManagementScreen";
 import SystemLogsScreen from "../screens/SystemLogsScreen";
 import AppSettingsScreen from "../screens/AppSettingsScreen";
+import SystemLogsScreen from "../screens/SystemLogsScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -25,6 +26,11 @@ export default function AdminStack() {
       <Stack.Screen
         name="UserManagement"
         component={UserManagementScreen}
+        options={{ title: "User Management" }}
+      />
+      <Stack.Screen
+        name="SystemLogs"
+        component={SystemLogsScreen}
         options={{ title: "System Logs" }}
       />
       <Stack.Screen

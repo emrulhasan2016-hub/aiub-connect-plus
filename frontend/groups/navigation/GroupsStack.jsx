@@ -1,7 +1,7 @@
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
-import routes from "../constants/routes";
-import colors from "../constants/colors";
+import routes from "../../constants/routes";
+import colors from "../../constants/colors";
 import GroupsScreen from "../screens/GroupsScreen";
 import GroupDetailsScreen from "../screens/GroupDetailsScreen";
 import GroupChatScreen from "../screens/GroupChatScreen";

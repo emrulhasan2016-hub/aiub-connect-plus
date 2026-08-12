@@ -1,5 +1,3 @@
-// navigation/CreateStack.js
-// Member 2 owns this file + Create Post screen (reached from the middle tab).
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import routes from "../../constants/routes";
