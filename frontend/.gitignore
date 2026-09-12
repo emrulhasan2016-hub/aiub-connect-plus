@@ -1,0 +1,10 @@
+node_modules/
+.expo/
+<<<<<<< HEAD
+=======
+.expo-shared/
+.env
+.env.local
+*.log
+.DS_Store
+>>>>>>> 16529335b0cd60984de1e8d160b7fb3fa8f6ee54
