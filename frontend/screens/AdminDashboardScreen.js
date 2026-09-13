@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
@@ -6,44 +6,89 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
+import useApp from "../hooks/useApp";
+import Loading from "../components/Loading";
+import ErrorState from "../components/ErrorState";
 
 export default function AdminDashboardScreen({ navigation }) {
+  const { state, fetchAdminStats } = useApp();
+
+  useEffect(() => {
+    fetchAdminStats();
+  }, [fetchAdminStats]);
+
+  if (state.adminStatsStatus === "loading" && !state.adminStats) {
+    return <Loading text="Loading dashboard..." />;
+  }
+
+  if (state.adminStatsStatus === "error" && !state.adminStats) {
+    return (
+      <View style={styles.container}>
+        <ErrorState message={state.adminStatsError} onRetry={fetchAdminStats} />
+      </View>
+    );
+  }
+
+  const stats = state.adminStats || {
+    totalUsers: 0,
+    bannedUsers: 0,
+    totalGroups: 0,
+    totalPosts: 0,
+    totalNotices: 0,
+    totalJobs: 0,
+  };
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.headerTitle}>Admin Panel Dashboard</Text>
 
-      {/* Quick Stats Cards */}
-
       <View style={styles.statsContainer}>
         <View style={[styles.card, { backgroundColor: "#4CAF50" }]}>
-          <Text style={styles.cardValue}>1,250</Text>
+          <Text style={styles.cardValue}>{stats.totalUsers}</Text>
           <Text style={styles.cardLabel}>Total Users</Text>
         </View>
         <View style={[styles.card, { backgroundColor: "#2196F3" }]}>
-          <Text style={styles.cardValue}>48</Text>
+          <Text style={styles.cardValue}>{stats.totalGroups}</Text>
           <Text style={styles.cardLabel}>Active Groups</Text>
         </View>
       </View>
 
-      {/* Admin Actions */}
+      <View style={styles.statsContainer}>
+        <View style={[styles.card, { backgroundColor: "#F44336" }]}>
+          <Text style={styles.cardValue}>{stats.bannedUsers}</Text>
+          <Text style={styles.cardLabel}>Banned Users</Text>
+        </View>
+        <View style={[styles.card, { backgroundColor: "#FF9800" }]}>
+          <Text style={styles.cardValue}>{stats.totalPosts}</Text>
+          <Text style={styles.cardLabel}>Total Posts</Text>
+        </View>
+      </View>
+
+      <View style={styles.statsContainer}>
+        <View style={[styles.card, { backgroundColor: "#9C27B0" }]}>
+          <Text style={styles.cardValue}>{stats.totalNotices}</Text>
+          <Text style={styles.cardLabel}>Notices</Text>
+        </View>
+        <View style={[styles.card, { backgroundColor: "#009688" }]}>
+          <Text style={styles.cardValue}>{stats.totalJobs}</Text>
+          <Text style={styles.cardLabel}>Jobs & Internships</Text>
+        </View>
+      </View>
 
       <View style={styles.actionContainer}>
         <Text style={styles.sectionTitle}>Management Controls</Text>
-
         <TouchableOpacity
           style={styles.button}
           onPress={() => navigation?.navigate("UserManagement")}
         >
           <Text style={styles.buttonText}>Manage Users & Roles</Text>
         </TouchableOpacity>
-
         <TouchableOpacity
           style={styles.button}
           onPress={() => navigation?.navigate("SystemLogs")}
         >
           <Text style={styles.buttonText}>View System Audit Logs</Text>
         </TouchableOpacity>
-
         <TouchableOpacity
           style={[styles.button, styles.secondaryButton]}
           onPress={() => navigation?.navigate("AppSettings")}
@@ -66,7 +111,7 @@ const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 20,
+    marginBottom: 12,
   },
   card: {
     flex: 1,
