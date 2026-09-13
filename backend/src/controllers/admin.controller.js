@@ -13,8 +13,8 @@ function getDashboardStats(req, res, next) {
   try {
     const stats = adminService.getDashboardStats();
     res.json({ success: true, data: stats });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 }
 
@@ -22,8 +22,8 @@ function getUsers(req, res, next) {
   try {
     const users = adminService.listUsers();
     res.json({ success: true, data: users });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 }
 
@@ -31,10 +31,10 @@ function updateUser(req, res, next) {
   try {
     const userId = parseId(req.params.id, "user id");
     const payload = validateUpdateUser(req.body);
-    const user = adminService.updateUser(userId, req.user.id, payload);
+    const user = adminService.updateUser(userId, req.user, payload); // ⭐ req.user পুরোটা পাঠানো হচ্ছে
     res.json({ success: true, data: user });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 }
 

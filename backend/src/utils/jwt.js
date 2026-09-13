@@ -11,7 +11,12 @@ if (!JWT_SECRET) {
 
 function signToken(user) {
   return jwt.sign(
-    { id: user.id, role: user.role, email: user.email },
+    {
+      id: user.id,
+      role: user.role,
+      email: user.email,
+      isSuperAdmin: !!(user.is_super_admin ?? user.isSuperAdmin), // দুই নামের যেকোনোটা থেকে নেবে
+    },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRES_IN },
   );
