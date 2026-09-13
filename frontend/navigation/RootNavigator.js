@@ -1,12 +1,17 @@
 import React, { useContext } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { AuthContext } from "../context/AuthContext";
+import Loading from "../components/Loading";
 
 import AuthStack from "./AuthStack";
 import MainTabs from "./MainTabs";
 
 export default function RootNavigator() {
-  const { user } = useContext(AuthContext);
+  const { user, bootstrapping } = useContext(AuthContext);
+
+  if (bootstrapping) {
+    return <Loading text="Restoring your session..." />;
+  }
 
   return (
     <NavigationContainer>
