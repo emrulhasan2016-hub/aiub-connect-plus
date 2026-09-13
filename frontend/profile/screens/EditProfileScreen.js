@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "../../components/Header";
@@ -11,6 +11,7 @@ import colors from "../../constants/colors";
 
 export default function EditProfileScreen({ navigation }) {
   const { user, updateProfile } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
   const { values, errors, handleChange, validateAll } = useForm(
     {
       fullName: user.fullName,
@@ -20,12 +21,19 @@ export default function EditProfileScreen({ navigation }) {
     validateEditProfile,
   );
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateAll()) return;
-    updateProfile(values);
-    Alert.alert("Profile updated", "Your changes have been saved.", [
-      { text: "OK", onPress: () => navigation.goBack() },
-    ]);
+    setSubmitting(true);
+    try {
+      await updateProfile(values);
+      Alert.alert("Profile updated", "Your changes have been saved.", [
+        { text: "OK", onPress: () => navigation.goBack() },
+      ]);
+    } catch (err) {
+      Alert.alert("Could not save changes", err.message || "Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -54,6 +62,7 @@ export default function EditProfileScreen({ navigation }) {
         <PrimaryButton
           title="Save Changes"
           onPress={handleSave}
+          loading={submitting}
           style={{ marginTop: 12 }}
         />
       </ScrollView>
