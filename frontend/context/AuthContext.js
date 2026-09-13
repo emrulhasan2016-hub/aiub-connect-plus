@@ -4,6 +4,7 @@
 
 import React, { createContext, useState } from "react";
 import usersData from "../data/users";
+import { fetchProfileApi, updateProfileApi } from "../api/profile.api";
 
 export const AuthContext = createContext(null);
 
@@ -19,12 +20,16 @@ export function AuthProvider({ children }) {
       // fake network delay so loading states are visible/testable
       setTimeout(() => {
         const found = users.find(
-          (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
+          (u) =>
+            u.email.toLowerCase() === email.toLowerCase() &&
+            u.password === password,
         );
         setAuthLoading(false);
         if (found) {
           if (found.status === "banned") {
-            reject(new Error("This account has been suspended by an administrator."));
+            reject(
+              new Error("This account has been suspended by an administrator."),
+            );
             return;
           }
           setUser(found);
@@ -41,7 +46,9 @@ export function AuthProvider({ children }) {
       setAuthLoading(true);
       setTimeout(() => {
         setAuthLoading(false);
-        const exists = users.some((u) => u.email.toLowerCase() === newUser.email.toLowerCase());
+        const exists = users.some(
+          (u) => u.email.toLowerCase() === newUser.email.toLowerCase(),
+        );
         if (exists) {
           reject(new Error("An account with this AIUB email already exists."));
           return;
@@ -62,14 +69,31 @@ export function AuthProvider({ children }) {
 
   const logout = () => setUser(null);
 
-  const updateProfile = (updates) => {
-    setUser((prev) => ({ ...prev, ...updates }));
-    setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, ...updates } : u)));
+  const updateProfile = async (updates) => {
+    const updated = await updateProfileApi(updates);
+    setUser(updated);
+    return updated;
+  };
+
+  const refreshProfile = async () => {
+    const profile = await fetchProfileApi();
+    setUser(profile);
+    return profile;
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, users, authLoading, login, register, logout, updateProfile, setUsers }}
+      value={{
+        user,
+        users,
+        authLoading,
+        login,
+        register,
+        logout,
+        updateProfile,
+        refreshProfile,
+        setUsers,
+      }}
     >
       {children}
     </AuthContext.Provider>
