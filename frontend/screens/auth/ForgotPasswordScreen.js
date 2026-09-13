@@ -1,30 +1,36 @@
 // screens/auth/ForgotPasswordScreen.js
-// Member 1 — FR4: validates required AIUB email and shows a success alert on submit.
+// Member 1 — FR4: validates required AIUB email and calls the real backend.
 import React, { useState } from "react";
 import { View, Text, StyleSheet, Alert, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import InputField from "../../components/InputField";
 import PrimaryButton from "../../components/PrimaryButton";
 import useForm from "../../hooks/useForm";
+import useAuth from "../../hooks/useAuth";
 import { validateForgotPassword } from "../../utils/validation";
 import colors from "../../constants/colors";
 import fonts from "../../constants/fonts";
 
 export default function ForgotPasswordScreen({ navigation }) {
+  const { forgotPassword } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const { values, errors, handleChange, validateAll } = useForm({ email: "" }, validateForgotPassword);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateAll()) return;
     setSubmitting(true);
-    setTimeout(() => {
-      setSubmitting(false);
+    try {
+      await forgotPassword(values.email);
       Alert.alert(
         "Check your email",
         "If an account exists for this email, a password reset link has been sent.",
         [{ text: "OK", onPress: () => navigation.goBack() }]
       );
-    }, 700);
+    } catch (err) {
+      Alert.alert("Request failed", err.message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

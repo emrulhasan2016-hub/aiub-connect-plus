@@ -3,7 +3,7 @@
 // Every screen reads from here via useContext(AppContext) instead of importing /data directly,
 // so likes/comments/posts/etc. stay in sync across the whole app.
 
-import React, { createContext, useReducer } from "react";
+import React, { createContext, useReducer, useCallback } from "react";
 import postsData from "../data/posts";
 import commentsData from "../data/comments";
 import noticesData from "../data/notices";
