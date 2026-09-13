@@ -29,6 +29,7 @@ function mapUserRow(row) {
     role: row.role,
     department: row.department,
     status: row.status,
+    isSuperAdmin: !!row.is_super_admin,
     createdAt: row.created_at,
   };
 }
@@ -46,14 +47,26 @@ function getUserRowOrThrow(userId) {
   return row;
 }
 
-function updateUser(targetUserId, actingAdminId, { role, status }) {
-  getUserRowOrThrow(targetUserId);
+function updateUser(targetUserId, actingAdmin, { role, status }) {
+  const targetRow = getUserRowOrThrow(targetUserId);
 
-  if (targetUserId === actingAdminId) {
+  if (targetUserId === actingAdmin.id) {
+    throw new AppError(400, "You cannot change your own role or status.");
+  }
+
+  if (targetRow.is_super_admin) {
+    throw new AppError(403, "The Super Admin account cannot be modified.");
+  }
+
+  if (role === "Admin" && !actingAdmin.isSuperAdmin) {
     throw new AppError(
-      400,
-      "Admins cannot change their own role or status from this screen.",
+      403,
+      "Only the Super Admin can promote a user to Admin.",
     );
+  }
+
+  if (targetRow.role === "Admin" && !actingAdmin.isSuperAdmin) {
+    throw new AppError(403, "Only the Super Admin can modify another Admin.");
   }
 
   db.prepare(

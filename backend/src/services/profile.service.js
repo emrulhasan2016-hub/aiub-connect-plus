@@ -25,6 +25,7 @@ function mapUserRow(row) {
     followers,
     following,
     status: row.status,
+    isSuperAdmin: !!row.is_super_admin,
     createdAt: row.created_at,
   };
 }

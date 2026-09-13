@@ -1,4 +1,5 @@
 const AppError = require("../utils/AppError");
+
 const ALLOWED_ROLES = ["Student", "Faculty", "Alumni", "Admin"];
 const ALLOWED_STATUSES = ["active", "banned"];
 
