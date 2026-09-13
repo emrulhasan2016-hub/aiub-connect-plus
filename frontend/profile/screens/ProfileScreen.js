@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,9 +21,21 @@ import sizes from "../../constants/sizes";
 import routes from "../../constants/routes";
 
 export default function ProfileScreen({ navigation }) {
-  const { user } = useAuth();
-  const { state, dispatch } = useApp();
+  const { user, refreshProfile } = useAuth();
+  const { state, toggleLike } = useApp();
   const myPosts = state.posts.filter((p) => p.userId === user.id);
+
+  useEffect(() => {
+    refreshProfile().catch(() => {});
+  }, []);
+
+  const handleLike = async (postId) => {
+    try {
+      await toggleLike(postId);
+    } catch (err) {
+      Alert.alert("Could not update like", err.message || "Please try again.");
+    }
+  };
 
   return (
     <SafeAreaView
@@ -100,16 +113,9 @@ export default function ProfileScreen({ navigation }) {
                 key={p.id}
                 post={p}
                 author={user}
-                liked={p.likedBy.includes(user.id)}
-                commentCount={
-                  state.comments.filter((c) => c.postId === p.id).length
-                }
-                onLike={() =>
-                  dispatch({
-                    type: "TOGGLE_LIKE",
-                    payload: { postId: p.id, userId: user.id },
-                  })
-                }
+                liked={p.likedByMe}
+                commentCount={p.commentCount}
+                onLike={() => handleLike(p.id)}
                 onComment={() => {}}
                 onPress={() => {}}
               />
