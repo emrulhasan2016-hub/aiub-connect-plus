@@ -4,10 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js",
-    "db:init": "node src/database/init.js"
-  },
+  "start": "node server.js",
+  "dev": "nodemon server.js",
+  "db:init": "node src/database/init.js",
+  "db:seed": "node src/database/seed.js"
+},
   "keywords": [],
   "type": "commonjs",
   "dependencies": {
