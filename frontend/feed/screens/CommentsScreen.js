@@ -1,72 +1,76 @@
 // screens/home/CommentsScreen.js
-// Member 2 --- FR8: supports nested replies, validates comment text (max 200 chars, not empty).
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, FlatList, TextInput, TouchableOpacity, Text, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import Header from "../../components/Header";
 import CommentCard from "../../components/CommentCard";
 import EmptyState from "../../components/EmptyState";
+import Loading from "../../components/Loading";
 import useApp from "../../hooks/useApp";
-import useAuth from "../../hooks/useAuth";
 import { validateComment } from "../../utils/validation";
 import colors from "../../constants/colors";
 import fonts from "../../constants/fonts";
 
 export default function CommentsScreen({ route, navigation }) {
   const { postId } = route.params;
-  const { state, dispatch } = useApp();
-  const { user, users } = useAuth();
+  const { state, fetchComments, addComment } = useApp();
   const [text, setText] = useState("");
   const [error, setError] = useState(null);
   const [replyTo, setReplyTo] = useState(null);
+  const [sending, setSending] = useState(false);
 
-  const comments = state.comments.filter((c) => c.postId === postId);
-  const getAuthor = (id) => users.find((u) => u.id === id);
+  const entry = state.commentsByPost[postId];
+  const tree = entry?.tree || [];
 
-  const handleSend = () => {
+  useEffect(() => {
+    fetchComments(postId);
+  }, [postId]);
+
+  const handleSend = async () => {
     const err = validateComment(text);
     if (err) {
       setError(err);
       return;
     }
-    if (replyTo) {
-      dispatch({
-        type: "ADD_REPLY",
-        payload: { commentId: replyTo, reply: { id: "r" + Date.now(), userId: user.id, text, createdAt: new Date().toISOString() } },
-      });
-    } else {
-      dispatch({
-        type: "ADD_COMMENT",
-        payload: { id: "c" + Date.now(), postId, userId: user.id, text, createdAt: new Date().toISOString(), replies: [] },
-      });
+    setSending(true);
+    try {
+      await addComment(postId, { text, parentId: replyTo });
+      setText("");
+      setError(null);
+      setReplyTo(null);
+    } catch (e) {
+      setError(e?.response?.data?.message || "Couldn't send comment.");
+    } finally {
+      setSending(false);
     }
-    setText("");
-    setError(null);
-    setReplyTo(null);
   };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Comments" onBack={() => navigation.goBack()} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={80}>
-        <FlatList
-          data={comments}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 14 }}
-          ListEmptyComponent={<EmptyState icon="chatbubbles-outline" title="No comments yet" subtitle="Start the conversation." />}
-          renderItem={({ item }) => (
-            <View>
-              <CommentCard comment={item} author={getAuthor(item.userId)} />
-              {item.replies.map((r) => (
-                <CommentCard key={r.id} comment={r} author={getAuthor(r.userId)} isReply />
-              ))}
-              <TouchableOpacity onPress={() => setReplyTo(item.id)} style={{ marginLeft: 44, marginBottom: 10 }}>
-                <Text style={styles.replyLink}>Reply</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        />
+        {entry?.status === "loading" && tree.length === 0 ? (
+          <Loading text="Loading comments..." />
+        ) : (
+          <FlatList
+            data={tree}
+            keyExtractor={(item) => String(item.id)}
+            contentContainerStyle={{ padding: 14 }}
+            ListEmptyComponent={<EmptyState icon="chatbubbles-outline" title="No comments yet" subtitle="Start the conversation." />}
+            renderItem={({ item }) => (
+              <View>
+                <CommentCard comment={item} author={item.author} />
+                {(item.replies || []).map((r) => (
+                  <CommentCard key={r.id} comment={r} author={r.author} isReply />
+                ))}
+                <TouchableOpacity onPress={() => setReplyTo(item.id)} style={{ marginLeft: 44, marginBottom: 10 }}>
+                  <Text style={styles.replyLink}>Reply</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          />
+        )}
         {replyTo ? (
           <View style={styles.replyingBar}>
             <Text style={styles.replyingText}>Replying to a comment</Text>
@@ -82,8 +86,9 @@ export default function CommentsScreen({ route, navigation }) {
             value={text}
             onChangeText={(v) => { setText(v); setError(null); }}
             maxLength={200}
+            editable={!sending}
           />
-          <TouchableOpacity onPress={handleSend} style={styles.sendBtn}>
+          <TouchableOpacity onPress={handleSend} style={styles.sendBtn} disabled={sending}>
             <Ionicons name="send" size={18} color={colors.white} />
           </TouchableOpacity>
         </View>

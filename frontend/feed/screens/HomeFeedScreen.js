@@ -1,36 +1,41 @@
 // screens/home/HomeFeedScreen.js
-// Member 2 --- FR5: Home Feed shows posts via FlatList with pull-to-refresh, loading, empty states.
-import React, { useState, useCallback } from "react";
+import React, { useEffect, useCallback } from "react";
 import { View, FlatList, Text, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import PostCard from "../../components/PostCard";
 import Loading from "../../components/Loading";
 import EmptyState from "../../components/EmptyState";
 import useApp from "../../hooks/useApp";
-import useAuth from "../../hooks/useAuth";
 import colors from "../../constants/colors";
 import fonts from "../../constants/fonts";
 import routes from "../../constants/routes";
 
 export default function HomeFeedScreen({ navigation }) {
-  const { state, dispatch } = useApp();
-  const { user, users } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
+  const { state, fetchPosts, toggleLike } = useApp();
 
-  const getAuthor = (userId) => users.find((u) => u.id === userId);
-  const getCommentCount = (postId) => state.comments.filter((c) => c.postId === postId).length;
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
 
   const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 800);
-  }, []);
+    fetchPosts();
+  }, [fetchPosts]);
 
-  const toggleLike = (postId) => {
-    dispatch({ type: "TOGGLE_LIKE", payload: { postId, userId: user.id } });
+  const handleLike = (postId) => {
+    toggleLike(postId).catch(() => {});
   };
 
-  if (loading) return <Loading text="Loading feed..." />;
+  if (state.postsStatus === "loading" && state.posts.length === 0) {
+    return <Loading text="Loading feed..." />;
+  }
+
+  if (state.postsStatus === "error" && state.posts.length === 0) {
+    return (
+      <SafeAreaView style={styles.wrap} edges={["top"]}>
+        <EmptyState icon="cloud-offline-outline" title="Couldn't load feed" subtitle={state.postsError || "Please try again."} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.wrap} edges={["top"]}>
@@ -39,18 +44,18 @@ export default function HomeFeedScreen({ navigation }) {
       </View>
       <FlatList
         data={state.posts}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => String(item.id)}
         contentContainerStyle={{ padding: 14 }}
-        refreshing={refreshing}
+        refreshing={state.postsStatus === "loading"}
         onRefresh={onRefresh}
         ListEmptyComponent={<EmptyState icon="albums-outline" title="No posts yet" subtitle="Be the first to share something with the community." />}
         renderItem={({ item }) => (
           <PostCard
             post={item}
-            author={getAuthor(item.userId)}
-            liked={item.likedBy.includes(user.id)}
-            commentCount={getCommentCount(item.id)}
-            onLike={() => toggleLike(item.id)}
+            author={item.author}
+            liked={item.likedByMe}
+            commentCount={item.commentCount}
+            onLike={() => handleLike(item.id)}
             onPress={() => navigation.navigate(routes.POST_DETAILS, { postId: item.id })}
             onComment={() => navigation.navigate(routes.COMMENTS, { postId: item.id })}
           />

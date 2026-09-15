@@ -1,22 +1,24 @@
 // screens/home/PostDetailsScreen.js
-// Member 2 --- FR7: shows full post + author info + like/comment/share/report actions.
-import React from "react";
-import { View, Alert } from "react-native";
+import React, { useEffect } from "react";
+import { ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ScrollView } from "react-native";
-import Header from "../../components/Header";
 import PostCard from "../../components/PostCard";
 import EmptyState from "../../components/EmptyState";
+import Header from "../../components/Header";
 import useApp from "../../hooks/useApp";
-import useAuth from "../../hooks/useAuth";
 import colors from "../../constants/colors";
 import routes from "../../constants/routes";
 
 export default function PostDetailsScreen({ route, navigation }) {
   const { postId } = route.params;
-  const { state, dispatch } = useApp();
-  const { user, users } = useAuth();
+  const { state, fetchPost, toggleLike } = useApp();
   const post = state.posts.find((p) => p.id === postId);
+
+  useEffect(() => {
+    if (!post) {
+      fetchPost(postId).catch(() => {});
+    }
+  }, [postId]);
 
   if (!post) {
     return (
@@ -27,11 +29,12 @@ export default function PostDetailsScreen({ route, navigation }) {
     );
   }
 
-  const author = users.find((u) => u.id === post.userId);
-  const commentCount = state.comments.filter((c) => c.postId === post.id).length;
-
   const handleReport = () => {
     Alert.alert("Report Post", "This post has been reported to administrators for review.");
+  };
+
+  const handleLike = () => {
+    toggleLike(post.id).catch(() => {});
   };
 
   return (
@@ -40,10 +43,10 @@ export default function PostDetailsScreen({ route, navigation }) {
       <ScrollView contentContainerStyle={{ padding: 14 }}>
         <PostCard
           post={post}
-          author={author}
-          liked={post.likedBy.includes(user.id)}
-          commentCount={commentCount}
-          onLike={() => dispatch({ type: "TOGGLE_LIKE", payload: { postId: post.id, userId: user.id } })}
+          author={post.author}
+          liked={post.likedByMe}
+          commentCount={post.commentCount}
+          onLike={handleLike}
           onComment={() => navigation.navigate(routes.COMMENTS, { postId: post.id })}
           onPress={() => {}}
         />
