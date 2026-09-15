@@ -1,6 +1,4 @@
 // screens/home/CreatePostScreen.js
-// Member 2 --- FR6: Create Post validates content (max 500 chars), category & visibility
-// dropdowns, live character counter, mock image picker, preview.
 import React, { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -9,7 +7,6 @@ import InputField from "../../components/InputField";
 import PrimaryButton from "../../components/PrimaryButton";
 import useForm from "../../hooks/useForm";
 import useApp from "../../hooks/useApp";
-import useAuth from "../../hooks/useAuth";
 import { validatePostContent } from "../../utils/validation";
 import { postImages } from "../../constants/dummyImages";
 import colors from "../../constants/colors";
@@ -23,10 +20,10 @@ const CATEGORIES = [
 const VISIBILITY = ["Public", "Group Only"];
 
 export default function CreatePostScreen({ navigation }) {
-  const { dispatch } = useApp();
-  const { user } = useAuth();
+  const { createPost } = useApp();
   const [image, setImage] = useState(null);
   const [visibility, setVisibility] = useState("Public");
+  const [submitting, setSubmitting] = useState(false);
   const { values, errors, handleChange, validateAll, reset } = useForm(
     { content: "", category: "" },
     validatePostContent
@@ -37,24 +34,21 @@ export default function CreatePostScreen({ navigation }) {
     setImage(random);
   };
 
-  const handlePost = () => {
+  const handlePost = async () => {
     if (!validateAll()) return;
-    const newPost = {
-      id: "p" + Date.now(),
-      userId: user.id,
-      category: values.category,
-      content: values.content,
-      image,
-      likedBy: [],
-      visibility,
-      createdAt: new Date().toISOString(),
-    };
-    dispatch({ type: "ADD_POST", payload: newPost });
-    reset();
-    setImage(null);
-    Alert.alert("Posted!", "Your post is now live on the home feed.", [
-      { text: "OK", onPress: () => navigation.getParent()?.navigate("HomeTab") },
-    ]);
+    setSubmitting(true);
+    try {
+      await createPost({ content: values.content, category: values.category, image, visibility });
+      reset();
+      setImage(null);
+      Alert.alert("Posted!", "Your post is now live on the home feed.", [
+        { text: "OK", onPress: () => navigation.getParent()?.navigate("HomeTab") },
+      ]);
+    } catch (err) {
+      Alert.alert("Couldn't post", err?.response?.data?.message || "Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -95,7 +89,7 @@ export default function CreatePostScreen({ navigation }) {
         </TouchableOpacity>
         {image ? <Image source={{ uri: image }} style={styles.preview} /> : null}
 
-        <PrimaryButton title="Publish Post" onPress={handlePost} style={{ marginTop: 20 }} />
+        <PrimaryButton title={submitting ? "Posting..." : "Publish Post"} onPress={handlePost} disabled={submitting} style={{ marginTop: 20 }} />
       </ScrollView>
     </SafeAreaView>
   );
