@@ -1,5 +1,8 @@
+const bcrypt = require("bcryptjs");
 const db = require("../database/db");
 const AppError = require("../utils/AppError");
+
+const SALT_ROUNDS = 10;
 
 function getDashboardStats() {
   const totalUsers = db.prepare(`SELECT COUNT(*) AS c FROM users`).get().c;
@@ -75,4 +78,36 @@ function updateUser(targetUserId, actingAdmin, { role, status }) {
   return mapUserRow(getUserRowOrThrow(targetUserId));
 }
 
-module.exports = { getDashboardStats, listUsers, updateUser };
+function createAdmin(actingAdmin, { fullName, email, password }) {
+  if (!actingAdmin.isSuperAdmin) {
+    throw new AppError(403, "Only the Super Admin can add new admins.");
+  }
+
+  const existing = db
+    .prepare(`SELECT id FROM users WHERE email = ?`)
+    .get(email);
+  if (existing) {
+    throw new AppError(409, "An account with this email already exists.");
+  }
+
+  const base = email.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "_");
+  let username = base;
+  let suffix = 1;
+  while (db.prepare(`SELECT id FROM users WHERE username = ?`).get(username)) {
+    username = `${base}${suffix}`;
+    suffix += 1;
+  }
+
+  const passwordHash = bcrypt.hashSync(password, SALT_ROUNDS);
+
+  const info = db
+    .prepare(
+      `INSERT INTO users (full_name, username, email, password_hash, role, department, is_super_admin, status)
+       VALUES (?, ?, ?, ?, 'Admin', 'Administration', 0, 'active')`,
+    )
+    .run(fullName, username, email, passwordHash);
+
+  return mapUserRow(getUserRowOrThrow(info.lastInsertRowid));
+}
+
+module.exports = { getDashboardStats, listUsers, updateUser, createAdmin };

@@ -1,5 +1,8 @@
 const adminService = require("../services/admin.service");
-const { validateUpdateUser } = require("../validators/admin.validators");
+const {
+  validateUpdateUser,
+  validateCreateAdmin,
+} = require("../validators/admin.validators");
 const AppError = require("../utils/AppError");
 
 function parseId(raw, label) {
@@ -31,11 +34,32 @@ function updateUser(req, res, next) {
   try {
     const userId = parseId(req.params.id, "user id");
     const payload = validateUpdateUser(req.body);
-    const user = adminService.updateUser(userId, req.user, payload); // ⭐ req.user পুরোটা পাঠানো হচ্ছে
+    const user = adminService.updateUser(userId, req.user, payload);
     res.json({ success: true, data: user });
   } catch (err) {
     next(err);
   }
 }
 
-module.exports = { getDashboardStats, getUsers, updateUser };
+function createAdmin(req, res, next) {
+  try {
+    const errors = validateCreateAdmin(req.body);
+    if (Object.keys(errors).length > 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Validation failed.", errors });
+    }
+    const admin = adminService.createAdmin(req.user, {
+      fullName: req.body.fullName.trim(),
+      email: req.body.email.trim().toLowerCase(),
+      password: req.body.password,
+    });
+    res
+      .status(201)
+      .json({ success: true, message: "Admin account created.", data: admin });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { getDashboardStats, getUsers, updateUser, createAdmin };

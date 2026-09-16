@@ -26,4 +26,39 @@ function validateUpdateUser(body) {
   return { role, status };
 }
 
-module.exports = { validateUpdateUser, ALLOWED_ROLES, ALLOWED_STATUSES };
+function isValidAiubEmail(email = "") {
+  return /^[^\s@]+@aiub\.edu$/i.test(String(email).trim());
+}
+
+function isValidPassword(password = "") {
+  return (
+    typeof password === "string" &&
+    password.length >= 8 &&
+    /[A-Z]/.test(password) &&
+    /[0-9]/.test(password)
+  );
+}
+
+function validateCreateAdmin(body) {
+  const { fullName, email, password } = body || {};
+  const errors = {};
+
+  if (!fullName || fullName.trim().length < 3) {
+    errors.fullName = "Full name must be at least 3 characters.";
+  }
+  if (!isValidAiubEmail(email)) {
+    errors.email = "Use a valid AIUB email (name@aiub.edu).";
+  }
+  if (!isValidPassword(password)) {
+    errors.password = "Min 8 chars, 1 capital letter, 1 number.";
+  }
+
+  return errors;
+}
+
+module.exports = {
+  validateUpdateUser,
+  validateCreateAdmin,
+  ALLOWED_ROLES,
+  ALLOWED_STATUSES,
+};

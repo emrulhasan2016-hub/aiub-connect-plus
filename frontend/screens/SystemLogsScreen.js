@@ -16,6 +16,11 @@ export default function SystemLogsScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>System Audit Logs</Text>
+      <View style={styles.demoBanner}>
+        <Text style={styles.demoBannerText}>
+          Sample data — live audit logging is not implemented yet.
+        </Text>
+      </View>
       <FlatList
         data={logsdata}
         keyExtractor={(item) => item.id}
@@ -25,7 +30,7 @@ export default function SystemLogsScreen() {
               <Text style={styles.actionText}>{item.action}</Text>
               <Text style={styles.userText}>By: {item.user}</Text>
             </View>
-            <Text style={styles.timetext}>{item.time}</Text>
+            <Text style={styles.timeText}>{item.time}</Text>
           </View>
         )}
       />
@@ -36,6 +41,15 @@ export default function SystemLogsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: "#f9f9f9" },
   title: { fontSize: 20, fontWeight: "bold", marginBottom: 15, color: "#333" },
+  demoBanner: {
+    backgroundColor: "#FFF4E5",
+    borderColor: "#FFD8A8",
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 12,
+  },
+  demoBannerText: { fontSize: 12, color: "#8A5A00" },
   logCard: {
     flexDirection: "row",
     justifyContent: "space-between",

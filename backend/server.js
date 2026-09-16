@@ -13,6 +13,7 @@ const jobsRoutes = require("./src/routes/jobs.routes");
 const profileRoutes = require("./src/routes/profile.routes");
 const notificationsRoutes = require("./src/routes/notifications.routes");
 const adminRoutes = require("./src/routes/admin.routes");
+const usersRoutes = require("./src/routes/users.routes");
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use("/api/jobs", jobsRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/notifications", notificationsRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/users", usersRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -20,26 +20,43 @@ import { timeAgo } from "../../utils/time";
 
 export default function GroupChatScreen({ route }) {
   const { groupId } = route.params;
-  const { state, dispatch } = useApp();
-  const { user, users } = useAuth();
+  const { state, fetchGroupMessages, sendGroupMessage } = useApp();
+  const { user } = useAuth();
   const [inputText, setInputText] = useState("");
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState(null);
+
   const group = state.groups.find((g) => g.id === groupId);
-  const handleSend = () => {
-    if (!inputText.trim()) return;
-    const newMessage = {
-      id: "m" + Date.now(),
-      userId: user.id,
-      text: inputText.trim(),
-      createdAt: new Date().toISOString(),
-    };
+  const messages = state.messagesByGroup[groupId] || [];
+  const status = state.messagesStatus[groupId] || "idle";
 
-    dispatch({
-      type: "SEND_GROUP_MESSAGE",
-      payload: { groupId: group.id, message: newMessage },
-    });
+  // Messages now come from the backend, so they survive an app reload.
+  useEffect(() => {
+    fetchGroupMessages(groupId).catch(() =>
+      setError("Could not load messages."),
+    );
+  }, [groupId, fetchGroupMessages]);
 
-    setInputText("");
-  };
+  const handleSend = useCallback(async () => {
+    const text = inputText.trim();
+    if (!text || sending) return;
+
+    setSending(true);
+    setError(null);
+    try {
+      await sendGroupMessage(groupId, text);
+      setInputText("");
+    } catch (err) {
+      const status = err?.response?.status;
+      setError(
+        status === 403
+          ? "Join this group before sending a message."
+          : "Message failed to send. Check your connection.",
+      );
+    } finally {
+      setSending(false);
+    }
+  }, [inputText, sending, groupId, sendGroupMessage]);
 
   return (
     <KeyboardAvoidingView
@@ -48,11 +65,11 @@ export default function GroupChatScreen({ route }) {
       keyboardVerticalOffset={90}
     >
       <FlatList
-        data={group.messages}
+        data={messages}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => {
           const isMe = item.userId === user.id;
-          const sender = users.find((u) => u.id === item.userId);
+          const sender = item.sender;
 
           return (
             <View
@@ -78,7 +95,20 @@ export default function GroupChatScreen({ route }) {
           );
         }}
         contentContainerStyle={styles.chatList}
+        ListEmptyComponent={
+          status === "loading" ? (
+            <Text style={styles.stateText}>Loading messages...</Text>
+          ) : status === "error" ? (
+            <Text style={styles.stateText}>Could not load messages.</Text>
+          ) : (
+            <Text style={styles.stateText}>
+              No messages yet. Say hello to the group!
+            </Text>
+          )
+        }
       />
+
+      {error && <Text style={styles.errorText}>{error}</Text>}
 
       <View style={styles.inputContainer}>
         <TextInput
@@ -86,8 +116,14 @@ export default function GroupChatScreen({ route }) {
           placeholder="Type a message..."
           value={inputText}
           onChangeText={setInputText}
+          editable={!sending}
+          onSubmitEditing={handleSend}
         />
-        <TouchableOpacity style={styles.sendBtn} onPress={handleSend}>
+        <TouchableOpacity
+          style={[styles.sendBtn, sending && styles.sendBtnDisabled]}
+          onPress={handleSend}
+          disabled={sending}
+        >
           <Ionicons name="send" size={18} color={colors.white} />
         </TouchableOpacity>
       </View>
@@ -97,6 +133,20 @@ export default function GroupChatScreen({ route }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  stateText: {
+    textAlign: "center",
+    color: colors.muted,
+    marginTop: spacing.xl,
+    fontSize: fonts.size.sm,
+  },
+  errorText: {
+    color: colors.danger || "#c0392b",
+    fontSize: fonts.size.xs,
+    textAlign: "center",
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.xs,
+  },
+  sendBtnDisabled: { opacity: 0.5 },
   chatList: { padding: spacing.md },
   msgWrapper: { marginBottom: spacing.md, maxWidth: "80%" },
   msgMe: { alignSelf: "flex-end" },

@@ -43,4 +43,15 @@ function markAllRead(userId) {
   return listNotifications(userId);
 }
 
-module.exports = { listNotifications, markOneRead, markAllRead };
+function createNotification(recipientId, type, text, relatedId = null) {
+  db.prepare(
+    `INSERT INTO notifications (recipient_id, type, text, related_id) VALUES (?, ?, ?, ?)`,
+  ).run(recipientId, type, text, relatedId);
+}
+
+module.exports = {
+  listNotifications,
+  markOneRead,
+  markAllRead,
+  createNotification,
+};

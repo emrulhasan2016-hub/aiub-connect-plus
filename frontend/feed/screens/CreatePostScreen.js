@@ -1,6 +1,13 @@
-// screens/home/CreatePostScreen.js
 import React, { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet, Alert } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  StyleSheet,
+  Alert,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "../../components/Header";
 import InputField from "../../components/InputField";
@@ -14,8 +21,14 @@ import fonts from "../../constants/fonts";
 import sizes from "../../constants/sizes";
 
 const CATEGORIES = [
-  "General Discussion", "Academic Discussion", "Notice", "Job Circular",
-  "Internship", "Scholarship", "Event", "Study Material", "Lost & Found", "Achievement",
+  "General Discussion",
+  "Academic Discussion",
+  "Event",
+  "Study Material",
+  "Lost & Found",
+  "Achievement",
+  "Internship",
+  "Scholarship",
 ];
 const VISIBILITY = ["Public", "Group Only"];
 
@@ -26,7 +39,7 @@ export default function CreatePostScreen({ navigation }) {
   const [submitting, setSubmitting] = useState(false);
   const { values, errors, handleChange, validateAll, reset } = useForm(
     { content: "", category: "" },
-    validatePostContent
+    validatePostContent,
   );
 
   const pickMockImage = () => {
@@ -38,14 +51,26 @@ export default function CreatePostScreen({ navigation }) {
     if (!validateAll()) return;
     setSubmitting(true);
     try {
-      await createPost({ content: values.content, category: values.category, image, visibility });
+      await createPost({
+        content: values.content,
+        category: values.category,
+        image,
+        visibility,
+      });
       reset();
       setImage(null);
       Alert.alert("Posted!", "Your post is now live on the home feed.", [
-        { text: "OK", onPress: () => navigation.getParent()?.navigate("HomeTab") },
+        {
+          text: "OK",
+          onPress: () => navigation.getParent()?.navigate("HomeTab"),
+        },
       ]);
     } catch (err) {
-      Alert.alert("Couldn't post", err?.response?.data?.message || "Something went wrong. Please try again.");
+      Alert.alert(
+        "Couldn't post",
+        err?.response?.data?.message ||
+          "Something went wrong. Please try again.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -68,43 +93,127 @@ export default function CreatePostScreen({ navigation }) {
         <Text style={styles.label}>Category</Text>
         <View style={styles.chipsWrap}>
           {CATEGORIES.map((c) => (
-            <TouchableOpacity key={c} style={[styles.chip, values.category === c && styles.chipActive]} onPress={() => handleChange("category", c)}>
-              <Text style={[styles.chipText, values.category === c && styles.chipTextActive]}>{c}</Text>
+            <TouchableOpacity
+              key={c}
+              style={[styles.chip, values.category === c && styles.chipActive]}
+              onPress={() => handleChange("category", c)}
+            >
+              <Text
+                style={[
+                  styles.chipText,
+                  values.category === c && styles.chipTextActive,
+                ]}
+              >
+                {c}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
-        {errors.category ? <Text style={styles.errorText}>{errors.category}</Text> : null}
+        <Text style={styles.helperText}>
+          Posts appear on the Home Feed. Official notices and job circulars are
+          published separately on the Notice Board and Job Portal.
+        </Text>
+        {errors.category ? (
+          <Text style={styles.errorText}>{errors.category}</Text>
+        ) : null}
 
         <Text style={styles.label}>Visibility</Text>
         <View style={styles.chipsWrap}>
           {VISIBILITY.map((v) => (
-            <TouchableOpacity key={v} style={[styles.chip, visibility === v && styles.chipActive]} onPress={() => setVisibility(v)}>
-              <Text style={[styles.chipText, visibility === v && styles.chipTextActive]}>{v}</Text>
+            <TouchableOpacity
+              key={v}
+              style={[styles.chip, visibility === v && styles.chipActive]}
+              onPress={() => setVisibility(v)}
+            >
+              <Text
+                style={[
+                  styles.chipText,
+                  visibility === v && styles.chipTextActive,
+                ]}
+              >
+                {v}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
 
         <TouchableOpacity style={styles.imagePicker} onPress={pickMockImage}>
-          <Text style={styles.imagePickerText}>{image ? "Change Image" : "+ Add Image (mock)"}</Text>
+          <Text style={styles.imagePickerText}>
+            {image ? "Change Image" : "+ Add Image (mock)"}
+          </Text>
         </TouchableOpacity>
-        {image ? <Image source={{ uri: image }} style={styles.preview} /> : null}
+        {image ? (
+          <Image source={{ uri: image }} style={styles.preview} />
+        ) : null}
 
-        <PrimaryButton title={submitting ? "Posting..." : "Publish Post"} onPress={handlePost} disabled={submitting} style={{ marginTop: 20 }} />
+        <PrimaryButton
+          title={submitting ? "Posting..." : "Publish Post"}
+          onPress={handlePost}
+          disabled={submitting}
+          style={{ marginTop: 20 }}
+        />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  counter: { alignSelf: "flex-end", color: colors.muted, fontSize: fonts.size.xs, marginTop: -8, marginBottom: 12 },
-  label: { fontSize: fonts.size.sm, fontWeight: fonts.weight.semibold, color: colors.text, marginBottom: 8, marginTop: 6 },
-  chipsWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 6 },
-  chip: { borderWidth: 1, borderColor: colors.gray300, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 7, backgroundColor: colors.white },
+  helperText: {
+    fontSize: fonts.size.xs,
+    color: colors.muted,
+    marginTop: 6,
+    lineHeight: 16,
+  },
+  counter: {
+    alignSelf: "flex-end",
+    color: colors.muted,
+    fontSize: fonts.size.xs,
+    marginTop: -8,
+    marginBottom: 12,
+  },
+  label: {
+    fontSize: fonts.size.sm,
+    fontWeight: fonts.weight.semibold,
+    color: colors.text,
+    marginBottom: 8,
+    marginTop: 6,
+  },
+  chipsWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 6,
+  },
+  chip: {
+    borderWidth: 1,
+    borderColor: colors.gray300,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    backgroundColor: colors.white,
+  },
   chipActive: { backgroundColor: colors.navy, borderColor: colors.navy },
   chipText: { fontSize: fonts.size.xs, color: colors.text },
   chipTextActive: { color: colors.white, fontWeight: fonts.weight.bold },
-  errorText: { color: colors.danger, fontSize: fonts.size.xs, marginBottom: 10 },
-  imagePicker: { borderWidth: 1.5, borderStyle: "dashed", borderColor: colors.gray300, borderRadius: sizes.radiusSm, padding: 14, alignItems: "center", marginTop: 14 },
+  errorText: {
+    color: colors.danger,
+    fontSize: fonts.size.xs,
+    marginBottom: 10,
+  },
+  imagePicker: {
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+    borderColor: colors.gray300,
+    borderRadius: sizes.radiusSm,
+    padding: 14,
+    alignItems: "center",
+    marginTop: 14,
+  },
   imagePickerText: { color: colors.navy, fontWeight: fonts.weight.semibold },
-  preview: { width: "100%", height: 180, borderRadius: sizes.radiusSm, marginTop: 10 },
+  preview: {
+    width: "100%",
+    height: 180,
+    borderRadius: sizes.radiusSm,
+    marginTop: 10,
+  },
 });
