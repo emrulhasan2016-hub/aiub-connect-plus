@@ -6,3 +6,5 @@ node_modules/
 *.log
 .DS_Storebackend_mongo_backup_DONOTUSE_root/
 backend_mongo_backup_DONOTUSE_root/
+
+backend/db/
