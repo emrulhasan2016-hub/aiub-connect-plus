@@ -23,8 +23,8 @@ import routes from "../../constants/routes";
 export default function ProfileScreen({ navigation }) {
   const { user, refreshProfile } = useAuth();
   const { state, toggleLike, fetchPosts, fetchNotifications } = useApp();
-  const myPosts = state.posts.filter((p) => p.userId === user.id);
-  const unreadCount = state.notifications.filter((n) => !n.read).length;
+  const myPosts = (state.posts || []).filter((p) => p.userId === user.id);
+  const unreadCount = (state.notifications || []).filter((n) => !n.read).length;
 
   useEffect(() => {
     refreshProfile().catch(() => {});
@@ -41,13 +41,18 @@ export default function ProfileScreen({ navigation }) {
     }
   };
 
+  const avatarUri = user.avatar || user.avatarUrl || null;
+  const coverUri = user.cover || user.coverUrl || null;
+  const followersCount = (user.followers || []).length;
+  const followingCount = (user.following || []).length;
+
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: colors.background }}
       edges={["top"]}
     >
       <ScrollView>
-        <Image source={{ uri: user.cover }} style={styles.cover} />
+        <Image source={{ uri: coverUri }} style={styles.cover} />
         <View style={styles.topBar}>
           <TouchableOpacity
             onPress={() => navigation.navigate(routes.NOTIFICATIONS)}
@@ -76,7 +81,7 @@ export default function ProfileScreen({ navigation }) {
 
         <View style={styles.body}>
           <View style={styles.avatarRow}>
-            <ProfileAvatar uri={user.avatar} size={sizes.avatarLg} />
+            <ProfileAvatar uri={avatarUri} size={sizes.avatarLg} />
             <TouchableOpacity
               style={styles.editBtn}
               onPress={() => navigation.navigate(routes.EDIT_PROFILE)}
@@ -96,11 +101,11 @@ export default function ProfileScreen({ navigation }) {
 
           <View style={styles.statsRow}>
             <View style={styles.statBox}>
-              <Text style={styles.statNum}>{user.followers.length}</Text>
+              <Text style={styles.statNum}>{followersCount}</Text>
               <Text style={styles.statLabel}>Followers</Text>
             </View>
             <View style={styles.statBox}>
-              <Text style={styles.statNum}>{user.following.length}</Text>
+              <Text style={styles.statNum}>{followingCount}</Text>
               <Text style={styles.statLabel}>Following</Text>
             </View>
             <View style={styles.statBox}>

@@ -1,5 +1,6 @@
 const { verifyToken } = require("../utils/jwt");
 const AppError = require("../utils/AppError");
+const db = require("../database/db");
 
 function requireAuth(req, res, next) {
   const header = req.headers.authorization || "";
@@ -10,13 +11,27 @@ function requireAuth(req, res, next) {
       new AppError(401, "Missing or malformed Authorization header."),
     );
   }
+
+  let payload;
   try {
-    const payload = verifyToken(token);
-    req.user = payload; // { id, role, email }
-    next();
+    payload = verifyToken(token);
   } catch (err) {
-    next(new AppError(401, "Invalid or expired token."));
+    return next(new AppError(401, "Invalid or expired token."));
   }
+
+  const account = db
+    .prepare("SELECT id, role, status FROM users WHERE id = ?")
+    .get(payload.id);
+
+  if (!account) {
+    return next(new AppError(401, "This account no longer exists."));
+  }
+  if (account.status === "banned") {
+    return next(new AppError(403, "Your account has been banned."));
+  }
+
+  req.user = { ...payload, role: account.role };
+  next();
 }
 
 function requireRole(...allowedRoles) {
