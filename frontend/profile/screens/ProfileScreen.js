@@ -117,7 +117,9 @@ export default function ProfileScreen({ navigation }) {
           {user.role === "Admin" && (
             <TouchableOpacity
               style={styles.adminBtn}
-              onPress={() => navigation.navigate(routes.ADMIN_DASHBOARD)}
+              onPress={() =>
+                navigation.navigate("Admin", { screen: routes.ADMIN_DASHBOARD })
+              }
             >
               <Ionicons
                 name="shield-checkmark-outline"

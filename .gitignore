@@ -4,7 +4,8 @@ node_modules/
 .env
 .env.local
 *.log
-.DS_Storebackend_mongo_backup_DONOTUSE_root/
+.DS_Store
+
 backend_mongo_backup_DONOTUSE_root/
 
 backend/db/
