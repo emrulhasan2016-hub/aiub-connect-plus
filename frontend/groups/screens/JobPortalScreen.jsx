@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  RefreshControl,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import useApp from "../../hooks/useApp";
@@ -19,9 +21,20 @@ import routes from "../../constants/routes";
 
 const TYPES = ["All", "Job", "Internship", "Freelancing", "Scholarship"];
 export default function JobPortalScreen({ navigation }) {
-  const { state } = useApp();
+  const { state, fetchJobs } = useApp();
   const [selectedType, setSelectedType] = useState("All");
   const [search, setSearch] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchJobs();
+    setRefreshing(false);
+  }, [fetchJobs]);
   const filteredJobs = state.jobs.filter((j) => {
     const matchesType = selectedType === "All" || j.type === selectedType;
     const matchesSearch =
@@ -80,11 +93,54 @@ export default function JobPortalScreen({ navigation }) {
           />
         )}
         contentContainerStyle={styles.list}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        ListEmptyComponent={
+          state.jobsStatus === "loading" ? (
+            <View style={styles.emptyContainer}>
+              <ActivityIndicator color={colors.navy} />
+            </View>
+          ) : state.jobsStatus === "error" ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>
+                {state.jobsError || "Could not load opportunities."}
+              </Text>
+              <TouchableOpacity onPress={fetchJobs}>
+                <Text style={styles.retryText}>Tap to retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Ionicons
+                name="briefcase-outline"
+                size={48}
+                color={colors.gray500}
+              />
+              <Text style={styles.emptyText}>
+                No opportunities match your filters.
+              </Text>
+            </View>
+          )
+        }
       />
     </View>
   );
 }
 const styles = StyleSheet.create({
+  emptyContainer: { alignItems: "center", paddingVertical: spacing.xl },
+  emptyText: {
+    color: colors.muted,
+    fontSize: fonts.size.sm,
+    marginTop: spacing.sm,
+    textAlign: "center",
+  },
+  retryText: {
+    color: colors.navy,
+    fontSize: fonts.size.sm,
+    marginTop: spacing.sm,
+    fontWeight: "600",
+  },
   container: {
     flex: 1,
     backgroundColor: colors.background,

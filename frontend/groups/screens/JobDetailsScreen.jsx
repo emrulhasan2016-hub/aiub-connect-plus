@@ -19,7 +19,13 @@ export default function JobDetailsScreen({ route }) {
   const { jobId } = route.params;
   const { state } = useApp();
   const job = state.jobs.find((j) => j.id === jobId);
-  if (!job) return null;
+  if (!job) {
+    return (
+      <View style={styles.container}>
+        <Text>Job not found.</Text>
+      </View>
+    );
+  }
   const handleApply = () => {
     if (job.applyLink) {
       Linking.openURL(job.applyLink).catch(() =>

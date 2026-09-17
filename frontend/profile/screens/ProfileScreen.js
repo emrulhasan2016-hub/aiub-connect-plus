@@ -22,11 +22,15 @@ import routes from "../../constants/routes";
 
 export default function ProfileScreen({ navigation }) {
   const { user, refreshProfile } = useAuth();
-  const { state, toggleLike } = useApp();
-  const myPosts = state.posts.filter((p) => p.userId === user.id);
+  const { state, toggleLike, fetchPosts, fetchNotifications } = useApp();
+  const myPosts = (state.posts || []).filter((p) => p.userId === user.id);
+  const unreadCount = (state.notifications || []).filter((n) => !n.read).length;
 
   useEffect(() => {
     refreshProfile().catch(() => {});
+
+    fetchPosts();
+    fetchNotifications();
   }, []);
 
   const handleLike = async (postId) => {
@@ -37,14 +41,36 @@ export default function ProfileScreen({ navigation }) {
     }
   };
 
+  const avatarUri = user.avatar || user.avatarUrl || null;
+  const coverUri = user.cover || user.coverUrl || null;
+  const followersCount = (user.followers || []).length;
+  const followingCount = (user.following || []).length;
+
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: colors.background }}
       edges={["top"]}
     >
       <ScrollView>
-        <Image source={{ uri: user.cover }} style={styles.cover} />
+        <Image source={{ uri: coverUri }} style={styles.cover} />
         <View style={styles.topBar}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate(routes.NOTIFICATIONS)}
+            style={[styles.settingsBtn, { marginRight: 10 }]}
+          >
+            <Ionicons
+              name="notifications-outline"
+              size={20}
+              color={colors.white}
+            />
+            {unreadCount > 0 ? (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </Text>
+              </View>
+            ) : null}
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={() => navigation.navigate(routes.SETTINGS)}
             style={styles.settingsBtn}
@@ -55,7 +81,7 @@ export default function ProfileScreen({ navigation }) {
 
         <View style={styles.body}>
           <View style={styles.avatarRow}>
-            <ProfileAvatar uri={user.avatar} size={sizes.avatarLg} />
+            <ProfileAvatar uri={avatarUri} size={sizes.avatarLg} />
             <TouchableOpacity
               style={styles.editBtn}
               onPress={() => navigation.navigate(routes.EDIT_PROFILE)}
@@ -75,11 +101,11 @@ export default function ProfileScreen({ navigation }) {
 
           <View style={styles.statsRow}>
             <View style={styles.statBox}>
-              <Text style={styles.statNum}>{user.followers.length}</Text>
+              <Text style={styles.statNum}>{followersCount}</Text>
               <Text style={styles.statLabel}>Followers</Text>
             </View>
             <View style={styles.statBox}>
-              <Text style={styles.statNum}>{user.following.length}</Text>
+              <Text style={styles.statNum}>{followingCount}</Text>
               <Text style={styles.statLabel}>Following</Text>
             </View>
             <View style={styles.statBox}>
@@ -91,7 +117,9 @@ export default function ProfileScreen({ navigation }) {
           {user.role === "Admin" && (
             <TouchableOpacity
               style={styles.adminBtn}
-              onPress={() => navigation.navigate(routes.ADMIN_DASHBOARD)}
+              onPress={() =>
+                navigation.navigate("Admin", { screen: routes.ADMIN_DASHBOARD })
+              }
             >
               <Ionicons
                 name="shield-checkmark-outline"
@@ -129,7 +157,7 @@ export default function ProfileScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   cover: { width: "100%", height: 140, backgroundColor: colors.gray200 },
-  topBar: { position: "absolute", top: 44, right: 14 },
+  topBar: { position: "absolute", top: 44, right: 14, flexDirection: "row" },
   settingsBtn: {
     backgroundColor: "rgba(0,0,0,0.35)",
     width: 36,
@@ -137,6 +165,23 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
+  },
+  badge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: colors.danger,
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 3,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  badgeText: {
+    color: colors.white,
+    fontSize: 10,
+    fontWeight: fonts.weight.bold,
   },
   body: { padding: 16, marginTop: -40 },
   avatarRow: {

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -19,8 +19,9 @@ import routes from "../../constants/routes";
 
 export default function GroupDetailsScreen({ route, navigation }) {
   const { groupId } = route.params;
-  const { state, dispatch } = useApp();
-  const { user, users } = useAuth();
+  const { state, toggleGroupMembership } = useApp();
+  const { user } = useAuth();
+  const [busy, setBusy] = useState(false);
 
   const group = state.groups.find((g) => g.id === groupId);
   if (!group) {
@@ -32,16 +33,27 @@ export default function GroupDetailsScreen({ route, navigation }) {
   }
 
   const isMember = group.memberIds.includes(user.id);
-  const members = users.filter((u) => group.memberIds.includes(u.id));
-  const handleToggleMembership = () => {
-    dispatch({
-      type: "TOGGLE_GROUP_MEMBERSHIP",
-      payload: { groupId: group.id, userId: user.id },
-    });
-    Alert.alert(
-      "Success",
-      isMember ? "You left the group." : "You joined the group!",
-    );
+
+  const members = group.members || [];
+
+  const handleToggleMembership = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await toggleGroupMembership(group.id);
+      Alert.alert(
+        "Success",
+        isMember ? "You left the group." : "You joined the group!",
+      );
+    } catch (err) {
+      Alert.alert(
+        "Something went wrong",
+        err?.response?.data?.message ||
+          "Could not update your membership. Please try again.",
+      );
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -57,11 +69,17 @@ export default function GroupDetailsScreen({ route, navigation }) {
             style={[
               styles.btn,
               isMember ? styles.btnOutline : styles.btnPrimary,
+              busy && styles.btnDisabled,
             ]}
             onPress={handleToggleMembership}
+            disabled={busy}
           >
             <Text style={[styles.btnText, isMember && styles.btnOutlineText]}>
-              {isMember ? "Leave Group" : "Join Group"}
+              {busy
+                ? "Please wait..."
+                : isMember
+                  ? "Leave Group"
+                  : "Join Group"}
             </Text>
           </TouchableOpacity>
           {isMember && (
@@ -102,6 +120,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  btnDisabled: { opacity: 0.6 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   cover: { width: "100%", height: 180 },
   content: { padding: spacing.lg },

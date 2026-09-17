@@ -7,11 +7,13 @@ import {
   ScrollView,
 } from "react-native";
 import useApp from "../hooks/useApp";
+import useAuth from "../hooks/useAuth";
 import Loading from "../components/Loading";
 import ErrorState from "../components/ErrorState";
 
 export default function AdminDashboardScreen({ navigation }) {
   const { state, fetchAdminStats } = useApp();
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchAdminStats();
@@ -83,6 +85,16 @@ export default function AdminDashboardScreen({ navigation }) {
         >
           <Text style={styles.buttonText}>Manage Users & Roles</Text>
         </TouchableOpacity>
+        {user?.isSuperAdmin ? (
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: "#6A1B9A" }]}
+            onPress={() => navigation?.navigate("AddAdmin")}
+          >
+            <Text style={styles.buttonText}>
+              + Add New Admin (Super Admin only)
+            </Text>
+          </TouchableOpacity>
+        ) : null}
         <TouchableOpacity
           style={styles.button}
           onPress={() => navigation?.navigate("SystemLogs")}

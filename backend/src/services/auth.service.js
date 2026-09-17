@@ -22,12 +22,15 @@ function toPublicUser(row) {
     avatarUrl: row.avatar_url,
     coverUrl: row.cover_url,
     status: row.status,
+    isSuperAdmin: !!row.is_super_admin,
     createdAt: row.created_at,
   };
 }
 
 function findByEmail(email) {
-  return db.prepare("SELECT * FROM users WHERE email = ?").get(email.toLowerCase());
+  return db
+    .prepare("SELECT * FROM users WHERE email = ?")
+    .get(email.toLowerCase());
 }
 
 function findByUsername(username) {
@@ -38,7 +41,15 @@ function findById(id) {
   return db.prepare("SELECT * FROM users WHERE id = ?").get(id);
 }
 
-async function register({ fullName, username, email, department, studentId, role, password }) {
+async function register({
+  fullName,
+  username,
+  email,
+  department,
+  studentId,
+  role,
+  password,
+}) {
   if (findByEmail(email)) {
     throw new AppError(409, "An account with this AIUB email already exists.");
   }
@@ -79,23 +90,22 @@ async function login({ email, password }) {
   }
 
   if (row.status === "banned") {
-    throw new AppError(403, "This account has been suspended by an administrator.");
+    throw new AppError(
+      403,
+      "This account has been suspended by an administrator.",
+    );
   }
 
   const publicUser = toPublicUser(row);
-  const token = signToken(publicUser);
+  const token = signToken(row);
   return { token, user: publicUser };
 }
 
-// PROJECT-APPROPRIATE mock: no email provider is configured anywhere in the
-// supplied project (VERIFIED — no nodemailer/SMTP config exists). The
-// response is identical whether or not the email exists, which avoids
-// leaking which addresses are registered (standard practice) and is
-// explicitly NOT a claim of real email delivery.
 function forgotPassword({ email }) {
   const row = findByEmail(email);
   return {
-    message: "If an account exists for this email, password reset instructions would be sent.",
+    message:
+      "If an account exists for this email, password reset instructions would be sent.",
     demoNote: row
       ? "DEMO: account exists (no email sent — no email provider configured)."
       : "DEMO: no matching account (response kept identical on purpose).",
@@ -110,4 +120,12 @@ function getMe(userId) {
   return toPublicUser(row);
 }
 
-module.exports = { register, login, forgotPassword, getMe, toPublicUser, findByEmail, findById };
+module.exports = {
+  register,
+  login,
+  forgotPassword,
+  getMe,
+  toPublicUser,
+  findByEmail,
+  findById,
+};

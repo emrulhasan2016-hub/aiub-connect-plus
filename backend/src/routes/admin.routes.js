@@ -9,5 +9,6 @@ router.use(requireRole("Admin"));
 router.get("/dashboard-stats", controller.getDashboardStats);
 router.get("/users", controller.getUsers);
 router.put("/users/:id", controller.updateUser);
+router.post("/admins", controller.createAdmin); // Super Admin only (checked in the service)
 
 module.exports = router;

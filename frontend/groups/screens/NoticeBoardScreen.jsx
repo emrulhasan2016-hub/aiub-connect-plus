@@ -1,5 +1,13 @@
-import React, { useState } from "react";
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from "react-native";
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  RefreshControl,
+  ActivityIndicator,
+} from "react-native";
 import useApp from "../../hooks/useApp";
 import NoticeCard from "../../components/NoticeCard";
 import colors from "../../constants/colors";
@@ -7,14 +15,32 @@ import spacing from "../../constants/spacing";
 import fonts from "../../constants/fonts";
 import routes from "../../constants/routes";
 
-const CATEGORIES = ["All", "Academic", "Exam", "Assignment", "Seminar", "Workshop"];
+const CATEGORIES = [
+  "All",
+  "Academic",
+  "Exam",
+  "Assignment",
+  "Seminar",
+  "Workshop",
+];
 
 export default function NoticeBoardScreen({ navigation }) {
-  const { state } = useApp();
+  const { state, fetchNotices } = useApp();
   const [filter, setFilter] = useState("All");
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    fetchNotices();
+  }, [fetchNotices]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchNotices();
+    setRefreshing(false);
+  }, [fetchNotices]);
 
   const notices = state.notices.filter(
-    (n) => filter === "All" || n.category === filter
+    (n) => filter === "All" || n.category === filter,
   );
 
   return (
@@ -31,7 +57,12 @@ export default function NoticeBoardScreen({ navigation }) {
               style={[styles.chip, filter === item && styles.chipActive]}
               onPress={() => setFilter(item)}
             >
-              <Text style={[styles.chipText, filter === item && styles.chipTextActive]}>
+              <Text
+                style={[
+                  styles.chipText,
+                  filter === item && styles.chipTextActive,
+                ]}
+              >
                 {item}
               </Text>
             </TouchableOpacity>
@@ -43,10 +74,30 @@ export default function NoticeBoardScreen({ navigation }) {
         data={notices}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No notices in this category yet.</Text>
-          </View>
+          state.noticesStatus === "loading" ? (
+            <View style={styles.emptyContainer}>
+              <ActivityIndicator color={colors.navy} />
+            </View>
+          ) : state.noticesStatus === "error" ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>
+                {state.noticesError || "Could not load notices."}
+              </Text>
+              <TouchableOpacity onPress={fetchNotices}>
+                <Text style={styles.retryText}>Tap to retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>
+                No notices in this category yet.
+              </Text>
+            </View>
+          )
         }
         renderItem={({ item }) => (
           <NoticeCard
@@ -62,6 +113,13 @@ export default function NoticeBoardScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  retryText: {
+    color: colors.navy,
+    fontSize: fonts.size.sm,
+    marginTop: spacing.sm,
+    fontWeight: "600",
+    textAlign: "center",
+  },
   container: { flex: 1, backgroundColor: colors.background },
   filterRow: { padding: spacing.md, backgroundColor: colors.white },
   chip: {

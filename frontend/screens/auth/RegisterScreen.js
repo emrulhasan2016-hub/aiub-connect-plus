@@ -9,6 +9,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import InputField from "../../components/InputField";
@@ -20,7 +22,7 @@ import colors from "../../constants/colors";
 import fonts from "../../constants/fonts";
 import routes from "../../constants/routes";
 
-const ROLES = ["Student", "Faculty", "Alumni"]; // Admin accounts are created manually, not self-registered
+const ROLES = ["Student", "Faculty", "Alumni"];
 
 export default function RegisterScreen({ navigation }) {
   const { register } = useAuth();
@@ -58,115 +60,125 @@ export default function RegisterScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.wrap}>
-      <TouchableOpacity
-        onPress={() => navigation.goBack()}
-        style={{ padding: 20, paddingBottom: 0 }}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
       >
-        <Text style={styles.back}>← Back</Text>
-      </TouchableOpacity>
-      <ScrollView contentContainerStyle={{ padding: 24 }}>
-        <Text style={styles.title}>Create your account</Text>
-        <Text style={styles.subtitle}>
-          Only verified AIUB members can join.
-        </Text>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={{ padding: 20, paddingBottom: 0 }}
+        >
+          <Text style={styles.back}>← Back</Text>
+        </TouchableOpacity>
 
-        <View style={{ marginTop: 24 }}>
-          <InputField
-            label="Full Name"
-            placeholder="e.g. Rafiul Islam"
-            value={values.fullName}
-            onChangeText={(v) => handleChange("fullName", v)}
-            error={errors.fullName}
-          />
-          <InputField
-            label="Username"
-            placeholder="e.g. rafiul_cse"
-            value={values.username}
-            onChangeText={(v) => handleChange("username", v)}
-            error={errors.username}
-          />
-          <InputField
-            label="AIUB Email"
-            placeholder="yourname@aiub.edu"
-            value={values.email}
-            onChangeText={(v) => handleChange("email", v)}
-            error={errors.email}
-            keyboardType="email-address"
-          />
-          <InputField
-            label="Department"
-            placeholder="e.g. CSE"
-            value={values.department}
-            onChangeText={(v) => handleChange("department", v)}
-            error={errors.department}
-          />
-          <InputField
-            label="Student / Employee ID"
-            placeholder="e.g. 21-12345-1"
-            value={values.studentId}
-            onChangeText={(v) => handleChange("studentId", v)}
-            error={errors.studentId}
-          />
+        <ScrollView
+          contentContainerStyle={{ padding: 24, flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Text style={styles.title}>Create your account</Text>
+          <Text style={styles.subtitle}>
+            Only verified AIUB members can join.
+          </Text>
 
-          <Text style={styles.label}>Role</Text>
-          <View style={styles.roleRow}>
-            {ROLES.map((r) => (
-              <TouchableOpacity
-                key={r}
-                style={[
-                  styles.roleChip,
-                  values.role === r && styles.roleChipActive,
-                ]}
-                onPress={() => handleChange("role", r)}
-              >
-                <Text
+          <View style={{ marginTop: 24 }}>
+            <InputField
+              label="Full Name"
+              placeholder="e.g. Rafiul Islam"
+              value={values.fullName}
+              onChangeText={(v) => handleChange("fullName", v)}
+              error={errors.fullName}
+            />
+            <InputField
+              label="Username"
+              placeholder="e.g. rafiul_cse"
+              value={values.username}
+              onChangeText={(v) => handleChange("username", v)}
+              error={errors.username}
+            />
+            <InputField
+              label="AIUB Email"
+              placeholder="yourname@aiub.edu"
+              value={values.email}
+              onChangeText={(v) => handleChange("email", v)}
+              error={errors.email}
+              keyboardType="email-address"
+            />
+            <InputField
+              label="Department"
+              placeholder="e.g. CSE"
+              value={values.department}
+              onChangeText={(v) => handleChange("department", v)}
+              error={errors.department}
+            />
+            <InputField
+              label="Student / Employee ID"
+              placeholder="e.g. 21-12345-1"
+              value={values.studentId}
+              onChangeText={(v) => handleChange("studentId", v)}
+              error={errors.studentId}
+            />
+
+            <Text style={styles.label}>Role</Text>
+            <View style={styles.roleRow}>
+              {ROLES.map((r) => (
+                <TouchableOpacity
+                  key={r}
                   style={[
-                    styles.roleChipText,
-                    values.role === r && styles.roleChipTextActive,
+                    styles.roleChip,
+                    values.role === r && styles.roleChipActive,
                   ]}
+                  onPress={() => handleChange("role", r)}
                 >
-                  {r}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text
+                    style={[
+                      styles.roleChipText,
+                      values.role === r && styles.roleChipTextActive,
+                    ]}
+                  >
+                    {r}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {errors.role ? (
+              <Text style={styles.errorText}>{errors.role}</Text>
+            ) : null}
+
+            <InputField
+              label="Password"
+              placeholder="••••••••"
+              value={values.password}
+              onChangeText={(v) => handleChange("password", v)}
+              error={errors.password}
+              secureTextEntry
+              helperText="Min 8 chars, 1 capital letter, 1 number"
+            />
+            <InputField
+              label="Confirm Password"
+              placeholder="••••••••"
+              value={values.confirmPassword}
+              onChangeText={(v) => handleChange("confirmPassword", v)}
+              error={errors.confirmPassword}
+              secureTextEntry
+            />
+
+            <PrimaryButton
+              title="Register"
+              onPress={handleRegister}
+              loading={submitting}
+              style={{ marginTop: 8 }}
+            />
           </View>
-          {errors.role ? (
-            <Text style={styles.errorText}>{errors.role}</Text>
-          ) : null}
 
-          <InputField
-            label="Password"
-            placeholder="••••••••"
-            value={values.password}
-            onChangeText={(v) => handleChange("password", v)}
-            error={errors.password}
-            secureTextEntry
-            helperText="Min 8 chars, 1 capital letter, 1 number"
-          />
-          <InputField
-            label="Confirm Password"
-            placeholder="••••••••"
-            value={values.confirmPassword}
-            onChangeText={(v) => handleChange("confirmPassword", v)}
-            error={errors.confirmPassword}
-            secureTextEntry
-          />
-
-          <PrimaryButton
-            title="Register"
-            onPress={handleRegister}
-            loading={submitting}
-            style={{ marginTop: 8 }}
-          />
-        </View>
-
-        <View style={styles.footerRow}>
-          <Text style={styles.footerText}>Already have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.replace(routes.LOGIN)}>
-            <Text style={styles.footerLink}>Login</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+          <View style={styles.footerRow}>
+            <Text style={styles.footerText}>Already have an account? </Text>
+            <TouchableOpacity onPress={() => navigation.replace(routes.LOGIN)}>
+              <Text style={styles.footerLink}>Login</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

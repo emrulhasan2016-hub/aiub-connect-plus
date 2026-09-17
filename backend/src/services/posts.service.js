@@ -1,8 +1,8 @@
-// src/services/posts.service.js
 // OWNED BY: Member 2 (Sajib) - Home Feed
 
 const db = require("../database/db");
 const AppError = require("../utils/AppError");
+const { createNotification } = require("./notifications.service");
 
 const AUTHOR_FIELDS = `
   u.id          AS author_id,
@@ -24,12 +24,12 @@ function mapAuthor(row) {
   };
 }
 
-// ------------------------------------------------------------------
 // POSTS
-// ------------------------------------------------------------------
 
 function mapPostRow(row, currentUserId) {
-  const likedByRows = db.prepare(`SELECT user_id FROM likes WHERE post_id = ?`).all(row.id);
+  const likedByRows = db
+    .prepare(`SELECT user_id FROM likes WHERE post_id = ?`)
+    .all(row.id);
   const likedBy = likedByRows.map((r) => r.user_id);
 
   return {
@@ -58,7 +58,7 @@ function listPosts(currentUserId) {
       FROM posts p
       JOIN users u ON u.id = p.user_id
       ORDER BY p.created_at DESC, p.id DESC
-      `
+      `,
     )
     .all();
 
@@ -76,7 +76,7 @@ function getPostById(postId, currentUserId) {
       FROM posts p
       JOIN users u ON u.id = p.user_id
       WHERE p.id = ?
-      `
+      `,
     )
     .get(postId);
 
@@ -90,7 +90,7 @@ function createPost(userId, { content, category, image, visibility }) {
   const info = db
     .prepare(
       `INSERT INTO posts (user_id, category, content, image_url, visibility)
-       VALUES (?, ?, ?, ?, ?)`
+       VALUES (?, ?, ?, ?, ?)`,
     )
     .run(userId, category, content, image, visibility);
 
@@ -98,7 +98,9 @@ function createPost(userId, { content, category, image, visibility }) {
 }
 
 function toggleLike(postId, userId) {
-  const post = db.prepare(`SELECT id FROM posts WHERE id = ?`).get(postId);
+  const post = db
+    .prepare(`SELECT id, user_id FROM posts WHERE id = ?`)
+    .get(postId);
   if (!post) {
     throw new AppError(404, "Post not found.");
   }
@@ -108,17 +110,33 @@ function toggleLike(postId, userId) {
     .get(postId, userId);
 
   if (existing) {
-    db.prepare(`DELETE FROM likes WHERE post_id = ? AND user_id = ?`).run(postId, userId);
+    db.prepare(`DELETE FROM likes WHERE post_id = ? AND user_id = ?`).run(
+      postId,
+      userId,
+    );
   } else {
-    db.prepare(`INSERT INTO likes (post_id, user_id) VALUES (?, ?)`).run(postId, userId);
+    db.prepare(`INSERT INTO likes (post_id, user_id) VALUES (?, ?)`).run(
+      postId,
+      userId,
+    );
+
+    if (post.user_id !== userId) {
+      const liker = db
+        .prepare(`SELECT full_name FROM users WHERE id = ?`)
+        .get(userId);
+      createNotification(
+        post.user_id,
+        "Like",
+        `${liker.full_name} liked your post.`,
+        postId,
+      );
+    }
   }
 
   return getPostById(postId, userId);
 }
 
-// ------------------------------------------------------------------
 // COMMENTS
-// ------------------------------------------------------------------
 
 function mapCommentRow(row) {
   return {
@@ -164,7 +182,7 @@ function listComments(postId) {
       JOIN users u ON u.id = c.user_id
       WHERE c.post_id = ?
       ORDER BY c.created_at ASC, c.id ASC
-      `
+      `,
     )
     .all(postId);
 
@@ -172,7 +190,9 @@ function listComments(postId) {
 }
 
 function addComment(postId, userId, { text, parentId }) {
-  const post = db.prepare(`SELECT id FROM posts WHERE id = ?`).get(postId);
+  const post = db
+    .prepare(`SELECT id, user_id FROM posts WHERE id = ?`)
+    .get(postId);
   if (!post) {
     throw new AppError(404, "Post not found.");
   }
@@ -183,15 +203,23 @@ function addComment(postId, userId, { text, parentId }) {
       .get(parentId);
 
     if (!parent || parent.post_id !== Number(postId)) {
-      throw new AppError(400, "The comment you are replying to does not exist on this post.");
+      throw new AppError(
+        400,
+        "The comment you are replying to does not exist on this post.",
+      );
     }
     if (parent.parent_id) {
-      throw new AppError(400, "Cannot reply to a reply. Reply to the original comment instead.");
+      throw new AppError(
+        400,
+        "Cannot reply to a reply. Reply to the original comment instead.",
+      );
     }
   }
 
   const info = db
-    .prepare(`INSERT INTO comments (post_id, user_id, parent_id, text) VALUES (?, ?, ?, ?)`)
+    .prepare(
+      `INSERT INTO comments (post_id, user_id, parent_id, text) VALUES (?, ?, ?, ?)`,
+    )
     .run(postId, userId, parentId, text);
 
   const row = db
@@ -201,9 +229,21 @@ function addComment(postId, userId, { text, parentId }) {
       FROM comments c
       JOIN users u ON u.id = c.user_id
       WHERE c.id = ?
-      `
+      `,
     )
     .get(info.lastInsertRowid);
+
+  if (post.user_id !== userId) {
+    const commenter = db
+      .prepare(`SELECT full_name FROM users WHERE id = ?`)
+      .get(userId);
+    createNotification(
+      post.user_id,
+      "Comment",
+      `${commenter.full_name} commented on your post.`,
+      postId,
+    );
+  }
 
   return mapCommentRow({ ...row, replies: [] });
 }

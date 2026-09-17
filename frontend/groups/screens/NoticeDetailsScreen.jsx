@@ -1,7 +1,6 @@
 import React from "react";
 import { View, Text, ScrollView, StyleSheet } from "react-native";
 import useApp from "../../hooks/useApp";
-import useAuth from "../../hooks/useAuth";
 import colors from "../../constants/colors";
 import spacing from "../../constants/spacing";
 import fonts from "../../constants/fonts";
@@ -9,7 +8,6 @@ import fonts from "../../constants/fonts";
 export default function NoticeDetailsScreen({ route }) {
   const { noticeId } = route.params;
   const { state } = useApp();
-  const { users } = useAuth();
 
   const notice = state.notices.find((n) => n.id === noticeId);
   if (!notice) {
@@ -19,7 +17,8 @@ export default function NoticeDetailsScreen({ route }) {
       </View>
     );
   }
-  const author = users.find((u) => u.id === notice.userId);
+
+  const author = notice.author;
 
   return (
     <ScrollView style={styles.container}>

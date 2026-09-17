@@ -36,10 +36,16 @@ function getProfile(userId) {
   return mapUserRow(row);
 }
 
-function updateProfile(userId, { fullName, department, bio }) {
+function updateProfile(userId, { fullName, department, bio, avatar, cover }) {
   db.prepare(
-    `UPDATE users SET full_name = ?, department = ?, bio = ? WHERE id = ?`,
-  ).run(fullName, department, bio, userId);
+    `UPDATE users
+       SET full_name  = ?,
+           department = ?,
+           bio        = ?,
+           avatar_url = COALESCE(?, avatar_url),
+           cover_url  = COALESCE(?, cover_url)
+     WHERE id = ?`,
+  ).run(fullName, department, bio, avatar || null, cover || null, userId);
   return getProfile(userId);
 }
 

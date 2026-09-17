@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   FlatList,
   TouchableOpacity,
   TextInput,
+  RefreshControl,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import useApp from "../../hooks/useApp";
@@ -18,10 +20,21 @@ import fonts from "../../constants/fonts";
 import routes from "../../constants/routes";
 
 export default function GroupsScreen({ navigation }) {
-  const { state } = useApp();
+  const { state, fetchGroups } = useApp();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("my");
   const [search, setSearch] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    fetchGroups();
+  }, [fetchGroups]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchGroups();
+    setRefreshing(false);
+  }, [fetchGroups]);
 
   const myGroups = state.groups.filter((g) => g.memberIds.includes(user.id));
   const discoverGroups = state.groups.filter(
@@ -39,7 +52,7 @@ export default function GroupsScreen({ navigation }) {
           style={styles.portalButton}
           onPress={() => navigation.navigate(routes.NOTICE_BOARD)}
         >
-          <Ionicons name="mega-outline" size={20} color={colors.white} />
+          <Ionicons name="megaphone-outline" size={20} color={colors.white} />
           <Text style={styles.portalText}>Notice Board</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -100,11 +113,38 @@ export default function GroupsScreen({ navigation }) {
           />
         )}
         contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="people-outline" size={48} color={colors.gray500} />
-            <Text style={styles.emptyText}>No groups found.</Text>
-          </View>
+          state.groupsStatus === "loading" ? (
+            <View style={styles.emptyContainer}>
+              <ActivityIndicator color={colors.navy} />
+            </View>
+          ) : state.groupsStatus === "error" ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons
+                name="cloud-offline-outline"
+                size={48}
+                color={colors.gray500}
+              />
+              <Text style={styles.emptyText}>
+                {state.groupsError || "Could not load groups."}
+              </Text>
+              <TouchableOpacity onPress={fetchGroups}>
+                <Text style={styles.retryText}>Tap to retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Ionicons
+                name="people-outline"
+                size={48}
+                color={colors.gray500}
+              />
+              <Text style={styles.emptyText}>No groups found.</Text>
+            </View>
+          )
         }
       />
     </View>
@@ -116,6 +156,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
     padding: spacing.md,
+  },
+  retryText: {
+    color: colors.navy,
+    fontSize: fonts.size.sm,
+    marginTop: spacing.sm,
+    fontWeight: "600",
   },
   portalBar: {
     flexDirection: "row",
